@@ -1,6 +1,60 @@
-class AcGameMenu {
+class Settings {
     constructor(root) {
-        this.root = root
+        this.root = root;
+        this.platform = "WEB";
+        if (this.root.AcOS) {
+            this.platform = "ACAPP";
+        }
+        this.username = "";
+        this.photo = ";"
+
+        this.start();
+    }
+
+    start() {
+        this.getinfo();
+    }
+
+    login() {
+
+    }
+
+    register() {
+
+    }
+
+    getinfo() {
+        let outer = this;
+        $.ajax({
+            url: "https://app2243.acapp.acwing.com.cn/settings/getinfo/",
+            type: "GET",
+            data: {
+                platform: outer.platform,
+            },
+            success: function(resp) {
+                console.log(resp);
+                if (resp.result === "success") {
+                    outer.username = resp.username;
+                    outer.photo = resp.photo;
+                    outer.hide();
+                    outer.root.menu.show();
+                } else {
+                    outer.login();
+                }
+            }
+        });
+    }
+
+    hide() {
+
+    }
+
+    show() {
+
+    }
+}class AcGameMenu {
+    constructor(root) {
+        this.root = root;
         this.$menu = $(`
 <div class="ac-game-menu">
     <div class="ac-game-menu-field">
@@ -18,10 +72,11 @@ class AcGameMenu {
 	</div>
 </div>
         `);
+		this.$menu.hide();
         this.root.$ac_game.append(this.$menu);
-		this.$single_mode = this.$menu.find('.ac-game-menu-field-item-single-mode')
-		this.$multi_mode = this.$menu.find('.ac-game-menu-field-item-multi-mode')
-		this.$settings = this.$menu.find('.ac-game-menu-field-item-settings')
+		this.$single_mode = this.$menu.find('.ac-game-menu-field-item-single-mode');
+		this.$multi_mode = this.$menu.find('.ac-game-menu-field-item-multi-mode');
+		this.$settings = this.$menu.find('.ac-game-menu-field-item-settings');
 
 		this.start();
     }
@@ -183,7 +238,13 @@ requestAnimationFrame(AC_GAME_ANIMATION);class GameMap extends AcGameObject {
         this.is_me = is_me;
         this.eps = 0.1;
         this.friction = 0.9;
+
         this.cur_skill = null;
+        
+        if (this.is_me) {
+            this.img = new Image();
+            this.img.src = this.playground.root.settings.photo;
+        }
     }
 
     start() {
@@ -301,10 +362,20 @@ requestAnimationFrame(AC_GAME_ANIMATION);class GameMap extends AcGameObject {
     }
 
     render() {
-        this.ctx.beginPath();
-        this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
-        this.ctx.fillStyle = this.color;
-        this.ctx.fill();
+        if (this.is_me) {
+            this.ctx.save();
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.stroke();
+            this.ctx.clip();
+            this.ctx.drawImage(this.img, this.x - this.radius, this.y - this.radius, this.radius * 2, this.radius * 2);
+            this.ctx.restore();
+        } else {
+            this.ctx.beginPath();
+            this.ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2, false);
+            this.ctx.fillStyle = this.color;
+            this.ctx.fill();
+        }
     }
 
     on_destroy() {
@@ -423,9 +494,12 @@ requestAnimationFrame(AC_GAME_ANIMATION);class GameMap extends AcGameObject {
     }
 }
 export class AcGame {
-    constructor(id) {
+    constructor(id, AcOS) {
         this.id = id;
         this.$ac_game = $('#' + id);
+        this.AcOS = AcOS;
+        
+        this.settings = new Settings(this);
         this.menu = new AcGameMenu(this);
         this.playground = new AcGamePlayground(this);
         
