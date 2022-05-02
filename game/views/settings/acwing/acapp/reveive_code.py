@@ -1,20 +1,28 @@
-import json
-from django.shortcuts import redirect
+from django.http import JsonResponse
 from django.core.cache import cache
 import requests
 from django.contrib.auth.models import User
 from game.models.player.player import Player
-from django.contrib.auth import login
 from random import randint
 
 
 def receive_code(request):
     data = request.GET
+
+    if 'errcode' in data:
+        return JsonResponse({
+            'result': "apply_failed",
+            'errcode': data['errcode'],
+            'errmsg': data['errmsg'],
+        })
+
     code = data.get("code")
     state = data.get("state")
 
     if not cache.has_key(state):
-        return redirect("index")
+        return JsonResponse({
+            'result': "state_not_exists",
+        })
 
     cache.delete(state)
 
@@ -30,8 +38,12 @@ def receive_code(request):
 
     players = Player.objects.filter(openid=openid)
     if players.exists():
-        login(request, players[0].user)
-        return redirect("index")
+        player = players[0];
+        return JsonResponse({
+            'result': "success",
+            'username': player.user.username,
+            'photo': player.photo,
+        })
 
     get_userinfo_url = "https://www.acwing.com/third_party/api/meta/identity/getinfo/"
     params = {
@@ -40,7 +52,11 @@ def receive_code(request):
     }
     userinfo_resp = requests.get(get_userinfo_url, params=params).json()
     if 'errcode' in userinfo_resp:
-        return redirect("index")
+        return JsonResponse({
+            'result': "get_userinfo_failed",
+            'errcode': userinfo_resp['errcode'],
+            'errmsg': userinfo_resp['errmsg'],
+        })
     username = userinfo_resp['username']
     photo = userinfo_resp['photo']
     
@@ -48,6 +64,9 @@ def receive_code(request):
         username += str(randint(0, 9))
     user = User.objects.create(username=username)
     player = Player.objects.create(user=user, photo=photo, openid=openid)
-    login(request, user)
 
-    return redirect("index")
+    return JsonResponse({
+        'result': "success",
+        'username': player.user.username,
+        'photo': player.photo,
+    })

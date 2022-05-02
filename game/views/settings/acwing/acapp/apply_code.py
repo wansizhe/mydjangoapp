@@ -16,14 +16,16 @@ def get_state():
 
 def apply_code(request):
     appid = "2243"
-    redirect_uri = quote("https://app2243.acapp.acwing.com.cn/settings/acwing/web/receive_code/")
+    redirect_uri = quote("https://app2243.acapp.acwing.com.cn/settings/acwing/acapp/receive_code/")
     scope = "userinfo"
     state = get_state()
-    apply_code_url = "https://www.acwing.com/third_party/api/oauth2/web/authorize/"
 
     cache.set(state, True, 2*60*60)
 
     return JsonResponse({
         'result': "success",
-        'apply_code_url': apply_code_url + f"?appid={appid}&redirect_uri={redirect_uri}&scope={scope}&state={state}"
+        'appid': appid,
+        'redirect_uri': redirect_uri,
+        'scope': scope,
+        'state': state,
     })
