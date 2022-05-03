@@ -5,6 +5,16 @@ class AcGameObject {
         AC_GAME_OBJECTS.push(this);
         this.has_called_start = false;
         this.timedelta = 0;
+        this.uuid = this.create_uuid();
+    }
+
+    create_uuid() {
+        let res = "";
+        for (let i = 0; i < 8; i++) {
+            let x = Math.floor(10 * Math.random());
+            res += parseInt(x);
+        }
+        return res;
     }
 
     start() {
