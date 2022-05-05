@@ -7,11 +7,35 @@ from django.core.cache import cache
 
 class MultiPlayer(AsyncWebsocketConsumer):
     async def connect(self):
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        print('disconnect')
+        await self.channel_layer.group_discard(self.room_name, self.channel_name)
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+        event = data['event']
+        print(event)
+        if event == "create_player":
+            await self.create_player(data)
+        elif event == "move_to":
+            await self.move_to(data)
+        elif event == "shoot_fireball":
+            await self.shoot_fireball(data)
+        elif event == "attack":
+            await self.attack(data)
+        elif event == "blink":
+            await self.blink(data)
+    
+    async def group_send_event(self, data):
+        await self.send(text_data=json.dumps(data))
+
+    async def create_player(self, data):
         self.root_name = None
 
         for i in range(1000):
             name = f"room-{i}"
-            print("has key: ", cache.has_key(name))
             if not cache.has_key(name):
                 self.room_name = name
                 cache.set(self.room_name, [], 60*60*1)
@@ -23,8 +47,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
         if not self.room_name:
             return
 
-        await self.accept()
-
         for player in cache.get(self.room_name):
             await self.send(text_data=json.dumps({
                 'event': "create_player",
@@ -35,17 +57,6 @@ class MultiPlayer(AsyncWebsocketConsumer):
 
         await self.channel_layer.group_add(self.room_name, self.channel_name)
 
-    async def disconnect(self, close_code):
-        print('disconnect')
-        await self.channel_layer.group_discard(self.room_name, self.channel_name)
-
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        event = data['event']
-        if event == "create_player":
-            await self.create_player(data)
-    
-    async def create_player(self, data):
         players = cache.get(self.room_name)
         players.append({
             'uuid': data['uuid'],
@@ -56,7 +67,7 @@ class MultiPlayer(AsyncWebsocketConsumer):
         await self.channel_layer.group_send(
             self.room_name,
             {
-                'type': "group_create_player",
+                'type': "group_send_event",
                 'event': "create_player",
                 'uuid': data['uuid'],
                 'username': data['username'],
@@ -64,6 +75,55 @@ class MultiPlayer(AsyncWebsocketConsumer):
             }
         )
 
-    async def group_create_player(self, data):
-        await self.send(text_data=json.dumps(data))
+    async def move_to(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "move_to",
+                'uuid': data['uuid'],
+                'tx': data['tx'],
+                'ty': data['ty'],
+            }
+        )
 
+    async def shoot_fireball(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "shoot_fireball",
+                'uuid': data['uuid'],
+                'tx': data['tx'],
+                'ty': data['ty'],
+                'ball_uuid': data['ball_uuid'],
+            }
+        )
+
+    async def attack(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "attack",
+                'uuid': data['uuid'],
+                'attackee_uuid': data['attackee_uuid'],
+                'x': data['x'],
+                'y': data['y'],
+                'angle': data['angle'],
+                'damage': data['damage'],
+                'ball_uuid': data['ball_uuid'],
+            }
+        )
+
+    async def blink(self, data):
+        await self.channel_layer.group_send(
+            self.room_name,
+            {
+                'type': "group_send_event",
+                'event': "blink",
+                'uuid': data['uuid'],
+                'tx': data['tx'],
+                'ty': data['ty'],
+            }
+        )

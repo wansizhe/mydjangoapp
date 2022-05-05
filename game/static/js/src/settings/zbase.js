@@ -146,7 +146,6 @@ class Settings {
             url: "https://app2243.acapp.acwing.com.cn/settings/acwing/web/apply_code/",
             type: "GET",
             success: function(resp) {
-                console.log(resp);
                 if (resp.result === "success") {
                     window.location.replace(resp.apply_code_url);
                 }
@@ -179,20 +178,18 @@ class Settings {
 
     logout_on_remote() {
         if (this.platform === "ACAPP") {
-            return false;
-        }
-
-        $.ajax({
-            url: "https://app2243.acapp.acwing.com.cn/settings/logout/",
-            type: "GET",
-            success: function (resp) {
-                if (resp.result === "success") {
-                    location.reload();
-                } else {
-                    console.log(resp);
+            this.root.AcWingOS.api.window.close();
+        } else {
+            $.ajax({
+                url: "https://app2243.acapp.acwing.com.cn/settings/logout/",
+                type: "GET",
+                success: function (resp) {
+                    if (resp.result === "success") {
+                        location.reload();
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     register_on_remote() {
@@ -233,7 +230,6 @@ class Settings {
     acapp_login(appid, redirect_uri, scope, state) {
         let outer = this;
         this.root.AcWingOS.api.oauth2.authorize(appid, redirect_uri, scope, state, function(resp) {
-            console.log(resp);
             if (resp.result === "success") {
                 outer.username = resp.username;
                 outer.photo = resp.photo;
@@ -265,7 +261,6 @@ class Settings {
                 platform: outer.platform,
             },
             success: function(resp) {
-                console.log(resp);
                 if (resp.result === "success") {
                     outer.username = resp.username;
                     outer.photo = resp.photo;
