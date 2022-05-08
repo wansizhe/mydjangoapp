@@ -60,6 +60,8 @@ class AcGamePlayground {
         this.mode = mode;
         this.state = "waiting";
         this.notice_board = new NoticeBoard(this);
+        this.score_board = new SocreBoard(this);
+
         this.player_count = 0;
 
         this.resize();
@@ -68,7 +70,7 @@ class AcGamePlayground {
         this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, "white", 0.15, "me", this.root.settings.username, this.root.settings.photo));
 
         if (mode === "single mode") {
-            for (let i = 0; i < 5; i++) {
+            for (let i = 0; i < 2; i++) {
                 this.players.push(new Player(this, this.width / 2 / this.scale, 0.5, 0.05, this.get_random_color(), 0.15, "robot"));
             }
         } else if (mode === "multi mode") {
@@ -82,6 +84,27 @@ class AcGamePlayground {
     }
 
     hide() {
+        while (this.players && this.players.length > 0) {
+            this.players[0].destroy();
+        }
+
+        if (this.game_map) {
+            this.game_map.destroy();
+            this.game_map = null;
+        }
+
+        if (this.notice_board) {
+            this.notice_board.destroy();
+            this.notice_board = null;
+        }
+
+        if (this.score_board) {
+            this.score_board.destroy();
+            this.score_board = null;
+        }
+
+        this.$playground.empty();
+
         this.$playground.hide();
     }
 }
