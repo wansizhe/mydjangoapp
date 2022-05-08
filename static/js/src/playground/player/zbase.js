@@ -353,7 +353,6 @@ class Player extends AcGameObject {
     }
 
     on_destroy() {
-        console.log("player destroy");
         if (this.character === "me" && this.playground.state === "fighting") {
             this.playground.state = "over";
             this.playground.score_board.lose();
